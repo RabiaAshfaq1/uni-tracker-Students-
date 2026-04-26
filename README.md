@@ -55,7 +55,13 @@
 
 ---
 
-## 🔑 Demo Credentials
+## 🎬 Demo
+
+> **Watch the full walkthrough:** [▶️ UniTrack Demo Video](https://drive.google.com/file/d/1LHo-E9f4lTjqAuCARPa6dliFDLtuSxpc/view?usp=sharing)
+
+---
+
+## 🔑 Credentials
 
 > **Live URL:** [uni-tracker-students-2dfc.vercel.app](https://uni-tracker-students-2dfc.vercel.app/login)
 
