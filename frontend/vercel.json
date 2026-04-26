@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/frontend/browser",
+  "framework": null,
+  "routes": [
+    {
+      "src": "/(.*\\.(js|css|ico|png|jpg|svg|woff2?))",
+      "dest": "/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}

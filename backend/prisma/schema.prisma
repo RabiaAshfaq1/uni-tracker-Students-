@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int             @id @default(autoincrement())
+  name          String
+  email         String          @unique
+  password_hash String
+  created_at    DateTime        @default(now())
+  
+  semesters      Semester[]
+  notifications  Notification[]
+  study_sessions StudySession[]
+  tasks          Task[]
+
+  @@map("users")
+}
+
+model Semester {
+  id            Int       @id @default(autoincrement())
+  user_id       Int
+  number        Int
+  title         String
+  status        String    @default("current") // current | past
+  gpa_target    Float?
+  previous_cgpa Float?
+  is_current    Boolean   @default(false) // keeping for backward compatibility
+  created_at    DateTime  @default(now())
+  
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  subjects   Subject[]
+
+  @@map("semesters")
+}
+
+model Subject {
+  id           Int       @id @default(autoincrement())
+  semester_id  Int
+  name         String
+  credit_hours Int
+  color_tag    String?
+  created_at   DateTime  @default(now())
+  
+  semester       Semester       @relation(fields: [semester_id], references: [id], onDelete: Cascade)
+  tasks          Task[]
+  grade          Grade?
+  content_items  ContentItem[]
+  study_sessions StudySession[]
+
+  @@map("subjects")
+}
+
+model Task {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  semester_id  Int?
+  subject_id   Int?
+  title        String
+  type         String    // assignment, quiz, lab, presentation, project
+  due_date     DateTime?
+  is_complete  Boolean   @default(false)
+  is_submitted Boolean   @default(false)
+  submitted_at DateTime?
+  notes        String?
+  priority     String    @default("medium") // low, medium, high
+  created_at   DateTime  @default(now())
+  
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  subject      Subject?  @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
+}
+
+model Grade {
+  id                      Int      @id @default(autoincrement())
+  subject_id              Int      @unique
+  
+  quiz_1                  Float?
+  quiz_2                  Float?
+  quiz_3                  Float?
+  quiz_4                  Float?
+  quiz_5                  Float?
+  
+  assign_1                Float?
+  assign_2                Float?
+  assign_3                Float?
+  assign_4                Float?
+  assign_5                Float?
+  
+  lab_assign_1            Float?
+  lab_assign_2            Float?
+  lab_assign_3            Float?
+  
+  mid                     Float?
+  lab_mid                 Float?
+  final                   Float?
+  
+  total_marks             Float?
+  grade_point             Float?
+  letter_grade            String?
+  
+  subject                 Subject  @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+
+  @@map("grades")
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  message    String
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+  
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model ContentItem {
+  id           Int      @id @default(autoincrement())
+  subject_id   Int
+  type         String   // pdf, ppt, doc, link, assignment, notes
+  title        String
+  url          String?  // Cloudinary URL or regular link
+  description  String?
+  is_completed Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  subject    Subject  @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+
+  @@map("content_items")
+}
+
+model StudySession {
+  id               Int      @id @default(autoincrement())
+  user_id          Int
+  subject_id       Int?
+  title            String
+  date             DateTime
+  duration_minutes Int
+  notes            String?
+  is_completed     Boolean  @default(false)
+  created_at       DateTime @default(now())
+
+  user             User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  subject          Subject? @relation(fields: [subject_id], references: [id], onDelete: SetNull)
+
+  @@map("study_sessions")
+}

@@ -1,0 +1,106 @@
+<div class="page-header">
+  <div>
+    <h2>GPA Dashboard</h2>
+    <p>Track your semester and cumulative performance</p>
+  </div>
+  <button class="btn btn-primary" (click)="getGpaAdvice()" [disabled]="isLoadingAI">
+    <span class="material-icons">psychology</span>
+    {{isLoadingAI ? 'Analyzing...' : 'AI Insights'}}
+  </button>
+</div>
+
+<!-- CGPA Hero -->
+<div class="cgpa-hero glass-panel" *ngIf="!isLoadingCGPA && cgpa">
+  <div class="cgpa-ring">
+    <svg viewBox="0 0 36 36" class="ring-svg">
+      <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+      <path class="ring-fill" [style.stroke]="getGpaColor(cgpa.cgpa)"
+        [style.stroke-dasharray]="(cgpa.cgpa / 4.0 * 100) + ', 100'"
+        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+    </svg>
+    <div class="ring-text">
+      <span class="cgpa-val">{{cgpa.cgpa.toFixed(2)}}</span>
+      <span class="cgpa-label">CGPA</span>
+    </div>
+  </div>
+  <div class="cgpa-meta">
+    <div class="meta-item">
+      <span class="meta-label">Total Credits</span>
+      <span class="meta-val">{{cgpa.totalCredits}}</span>
+    </div>
+    <div class="meta-item" *ngIf="cgpa.previousCGPA">
+      <span class="meta-label">Previous CGPA</span>
+      <span class="meta-val">{{cgpa.previousCGPA.toFixed(2)}}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Semesters</span>
+      <span class="meta-val">{{cgpa.semesters.length}}</span>
+    </div>
+  </div>
+</div>
+
+<div class="loading-state" *ngIf="isLoadingCGPA">Loading CGPA...</div>
+
+<!-- Semester Cards -->
+<h3 class="section-title">Semester Breakdown</h3>
+<div *ngIf="isLoadingSemesters" class="loading-state">Loading semesters...</div>
+<div class="semester-cards" *ngIf="!isLoadingSemesters">
+  <div class="sem-card glass-panel" *ngFor="let entry of semesterGPAs">
+    <div class="sem-card-header">
+      <span class="sem-name">{{entry.sem.title || 'Semester ' + entry.sem.number}}</span>
+      <span class="sem-gpa" [style.color]="entry.gpa ? getGpaColor(entry.gpa.semesterGPA) : '#666'">
+        {{entry.gpa ? entry.gpa.semesterGPA.toFixed(2) : '–'}}
+      </span>
+    </div>
+    <div class="gpa-bar-track">
+      <div class="gpa-bar-fill"
+        [style.width]="entry.gpa ? (entry.gpa.semesterGPA / 4.0 * 100) + '%' : '0%'"
+        [style.background]="entry.gpa ? getGpaColor(entry.gpa.semesterGPA) : '#333'">
+      </div>
+    </div>
+    <div class="sem-subjects" *ngIf="entry.gpa">
+      <div class="subject-row" *ngFor="let sub of entry.gpa.subjects">
+        <span class="sub-name">{{sub.name}}</span>
+        <span class="sub-grade" [style.color]="sub.gradePoint ? getGpaColor(sub.gradePoint) : '#666'">
+          {{sub.letterGrade || '–'}} ({{sub.gradePoint?.toFixed(1) || '–'}})
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Advice Panel -->
+<div class="ai-panel glass-panel" *ngIf="showAI">
+  <div class="ai-header">
+    <span class="material-icons ai-icon">psychology</span>
+    <h3>AI Academic Insights</h3>
+  </div>
+
+  <div *ngIf="isLoadingAI" class="ai-loading">
+    <div class="pulse-dot"></div>
+    <p>Analyzing your academic data...</p>
+  </div>
+
+  <div *ngIf="!isLoadingAI && aiAdvice">
+    <div class="risk-badge" [ngClass]="getRiskClass(aiAdvice.overallRisk)">
+      Overall Risk: {{aiAdvice.overallRisk | uppercase}}
+    </div>
+
+    <p class="motivational">✨ {{aiAdvice.motivationalNote}}</p>
+
+    <div class="advice-grid">
+      <div class="advice-card" *ngFor="let adv of aiAdvice.subjectAdvice"
+        [ngClass]="getStatusClass(adv.status)">
+        <div class="advice-card-header">
+          <span class="adv-subject">{{adv.subject}}</span>
+          <span class="adv-status-badge">{{adv.status | uppercase}}</span>
+        </div>
+        <p class="adv-text">{{adv.advice}}</p>
+      </div>
+    </div>
+
+    <div class="top-priority" *ngIf="aiAdvice.topPriority">
+      🎯 Top Priority: <strong>{{aiAdvice.topPriority}}</strong>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,236 @@
+<div class="page-header">
+  <div>
+    <a routerLink="/subjects" class="back-link">
+      <span class="material-icons">arrow_back</span> Subjects
+    </a>
+    <h2>Subject Detail</h2>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tab-bar">
+  <button class="tab-btn" [class.active]="activeTab==='content'" (click)="setTab('content')">
+    <span class="material-icons">folder_open</span> Content
+  </button>
+  <button class="tab-btn" [class.active]="activeTab==='tasks'" (click)="setTab('tasks')">
+    <span class="material-icons">task_alt</span> Tasks
+  </button>
+  <button class="tab-btn" [class.active]="activeTab==='grades'" (click)="setTab('grades')">
+    <span class="material-icons">grade</span> Grades
+  </button>
+  <button class="tab-btn" [class.active]="activeTab==='progress'" (click)="setTab('progress')">
+    <span class="material-icons">bar_chart</span> Progress
+  </button>
+</div>
+
+<!-- CONTENT TAB -->
+<div *ngIf="activeTab==='content'">
+  <div class="tab-header">
+    <h3>Content Library</h3>
+    <button class="btn btn-primary" (click)="showContentModal=true">
+      <span class="material-icons">add</span> Add Content
+    </button>
+  </div>
+  <div *ngIf="isLoadingContent" class="loading-state">Loading...</div>
+  <div *ngIf="!isLoadingContent && contentItems.length===0" class="empty-state glass-panel">
+    <span class="material-icons">folder_open</span>
+    <p>No content added yet. Add your first item!</p>
+  </div>
+  <div class="content-grid" *ngIf="!isLoadingContent && contentItems.length>0">
+    <div class="content-card glass-panel" *ngFor="let item of contentItems" [class.completed]="item.is_completed">
+      <div class="content-top">
+        <span class="type-badge type-{{item.type}}">{{item.type | uppercase}}</span>
+        <div class="content-actions">
+          <button class="icon-btn" (click)="toggleContentComplete(item)" [title]="item.is_completed ? 'Mark Incomplete' : 'Mark Complete'">
+            <span class="material-icons">{{item.is_completed ? 'check_circle' : 'radio_button_unchecked'}}</span>
+          </button>
+          <button class="icon-btn danger" (click)="deleteContent(item.id)" title="Delete">
+            <span class="material-icons">delete</span>
+          </button>
+        </div>
+      </div>
+      <h4 class="content-title">{{item.title}}</h4>
+      <p class="content-desc" *ngIf="item.description">{{item.description}}</p>
+      <a *ngIf="item.url" [href]="item.url" target="_blank" class="content-link">
+        <span class="material-icons">open_in_new</span> Open
+      </a>
+    </div>
+  </div>
+
+  <!-- Content Modal -->
+  <div class="modal-overlay" *ngIf="showContentModal" (click)="showContentModal=false">
+    <div class="modal-box glass-panel" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Add Content Item</h3>
+        <button class="icon-btn" (click)="showContentModal=false"><span class="material-icons">close</span></button>
+      </div>
+      <form [formGroup]="contentForm" (ngSubmit)="addContent()">
+        <div class="form-group">
+          <label class="form-label">Title *</label>
+          <input class="form-control" formControlName="title" placeholder="e.g. Lecture 1 Slides">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select class="form-control" formControlName="type">
+            <option *ngFor="let t of contentTypes" [value]="t">{{t | uppercase}}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">URL (optional)</label>
+          <input class="form-control" formControlName="url" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description (optional)</label>
+          <textarea class="form-control" formControlName="description" rows="2" placeholder="Brief notes..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="showContentModal=false">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="contentForm.invalid || isSavingContent">
+            {{isSavingContent ? 'Adding...' : 'Add'}}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- TASKS TAB -->
+<div *ngIf="activeTab==='tasks'">
+  <div class="tab-header"><h3>Tasks</h3></div>
+  <div *ngIf="isLoadingTasks" class="loading-state">Loading...</div>
+  <div *ngIf="!isLoadingTasks && tasks.length===0" class="empty-state glass-panel">
+    <span class="material-icons">task_alt</span>
+    <p>No tasks for this subject.</p>
+  </div>
+  <div class="task-list" *ngIf="!isLoadingTasks && tasks.length>0">
+    <div class="task-row glass-panel" *ngFor="let task of tasks">
+      <div class="task-info">
+        <span class="task-badge" [ngClass]="getTaskStatusClass(task)">{{getTaskStatus(task)}}</span>
+        <span class="task-title">{{task.title}}</span>
+        <span class="task-meta">{{task.type}} · Due {{task.due_date | date:'MMM d'}}</span>
+      </div>
+      <div class="task-actions">
+        <button class="btn btn-sm btn-secondary" (click)="completeTask(task)" *ngIf="!task.is_complete">
+          <span class="material-icons">check</span> Complete
+        </button>
+        <button class="btn btn-sm btn-primary" (click)="submitTask(task)" *ngIf="task.is_complete && !task.is_submitted">
+          <span class="material-icons">upload</span> Submit
+        </button>
+        <span class="submitted-tag" *ngIf="task.is_submitted">
+          <span class="material-icons">done_all</span> Submitted
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GRADES TAB -->
+<div *ngIf="activeTab==='grades'">
+  <div class="tab-header">
+    <h3>Grades</h3>
+    <button class="btn btn-primary" (click)="saveGrades()" [disabled]="isSavingGrades">
+      {{isSavingGrades ? 'Saving...' : 'Save Grades'}}
+    </button>
+  </div>
+  <div *ngIf="isLoadingGrades" class="loading-state">Loading...</div>
+  <div *ngIf="!isLoadingGrades" class="grades-container">
+    <div class="grade-result glass-panel" *ngIf="grade.total_marks != null">
+      <div class="gpa-circle">
+        <span class="letter">{{grade.letter_grade}}</span>
+        <span class="points">{{grade.grade_point?.toFixed(2)}} GPA</span>
+      </div>
+      <p class="total-marks">Total: {{grade.total_marks != null ? grade.total_marks.toFixed(1) : '–'}}%</p>
+    </div>
+
+    <div class="grade-section glass-panel">
+      <h4>Quizzes (Best of 5)</h4>
+      <div class="grade-inputs">
+        <div class="grade-field" *ngFor="let f of gradeFields.quizzes; let i=index">
+          <label>Q{{i+1}}</label>
+          <input type="number" class="form-control" min="0" max="100" step="0.5"
+            [value]="getGradeVal(f)" (change)="setGradeVal(f, $any($event.target).value)"
+            placeholder="–">
+        </div>
+      </div>
+    </div>
+
+    <div class="grade-section glass-panel">
+      <h4>Assignments (Average)</h4>
+      <div class="grade-inputs">
+        <div class="grade-field" *ngFor="let f of gradeFields.assigns; let i=index">
+          <label>A{{i+1}}</label>
+          <input type="number" class="form-control" min="0" max="100" step="0.5"
+            [value]="getGradeVal(f)" (change)="setGradeVal(f, $any($event.target).value)"
+            placeholder="–">
+        </div>
+      </div>
+    </div>
+
+    <div class="grade-section glass-panel">
+      <h4>Lab Assignments</h4>
+      <div class="grade-inputs">
+        <div class="grade-field" *ngFor="let f of gradeFields.labAssigns; let i=index">
+          <label>LA{{i+1}}</label>
+          <input type="number" class="form-control" min="0" max="100" step="0.5"
+            [value]="getGradeVal(f)" (change)="setGradeVal(f, $any($event.target).value)"
+            placeholder="–">
+        </div>
+      </div>
+    </div>
+
+    <div class="grade-section glass-panel">
+      <h4>Exams</h4>
+      <div class="grade-inputs">
+        <div class="grade-field">
+          <label>Mid</label>
+          <input type="number" class="form-control" min="0" max="100" step="0.5"
+            [value]="getGradeVal('mid')" (change)="setGradeVal('mid', $any($event.target).value)"
+            placeholder="–">
+        </div>
+        <div class="grade-field">
+          <label>Lab Mid</label>
+          <input type="number" class="form-control" min="0" max="100" step="0.5"
+            [value]="getGradeVal('lab_mid')" (change)="setGradeVal('lab_mid', $any($event.target).value)"
+            placeholder="–">
+        </div>
+        <div class="grade-field">
+          <label>Final</label>
+          <input type="number" class="form-control" min="0" max="100" step="0.5"
+            [value]="getGradeVal('final')" (change)="setGradeVal('final', $any($event.target).value)"
+            placeholder="–">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROGRESS TAB -->
+<div *ngIf="activeTab==='progress'">
+  <div class="tab-header"><h3>Progress Overview</h3></div>
+  <div *ngIf="isLoadingProgress" class="loading-state">Loading...</div>
+  <div *ngIf="!isLoadingProgress && progress" class="progress-grid">
+    <div class="progress-card glass-panel">
+      <h4>Content Completion</h4>
+      <div class="progress-circle">
+        <svg viewBox="0 0 36 36" class="circular-chart">
+          <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <path class="circle" [style.stroke-dasharray]="progress.contentPercent + ', 100'"
+            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <text x="18" y="20.35" class="percentage">{{progress.contentPercent}}%</text>
+        </svg>
+      </div>
+      <p class="progress-label">{{progress.contentCompleted}} / {{progress.contentTotal}} items done</p>
+    </div>
+
+    <div class="progress-card glass-panel">
+      <h4>Task Status</h4>
+      <div class="stat-row"><span>Total Tasks</span><strong>{{progress.tasksTotal}}</strong></div>
+      <div class="stat-row"><span>Completed</span><strong class="text-success">{{progress.tasksCompleted}}</strong></div>
+      <div class="stat-row"><span>Submitted</span><strong class="text-primary">{{progress.tasksSubmitted}}</strong></div>
+      <div class="stat-row warn" *ngIf="progress.tasksPendingSubmit > 0">
+        <span class="material-icons">warning</span>
+        <span>{{progress.tasksPendingSubmit}} done but not submitted!</span>
+      </div>
+    </div>
+  </div>
+</div>

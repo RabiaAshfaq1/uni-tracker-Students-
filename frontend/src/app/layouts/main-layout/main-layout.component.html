@@ -1,0 +1,77 @@
+<div class="app-layout" [class.sidebar-collapsed]="isSidebarCollapsed">
+  
+  <!-- Sidebar -->
+  <aside class="sidebar glass-panel">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="material-icons emerald-text">auto_graph</span>
+        <span class="logo-text" *ngIf="!isSidebarCollapsed">UniTrack</span>
+      </div>
+      <button class="toggle-btn" (click)="toggleSidebar()">
+        <span class="material-icons">{{ isSidebarCollapsed ? 'chevron_right' : 'chevron_left' }}</span>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a *ngFor="let item of navItems" 
+         [routerLink]="item.route" 
+         routerLinkActive="active" 
+         class="nav-item">
+        <span class="material-icons">{{ item.icon }}</span>
+        <span class="nav-text" *ngIf="!isSidebarCollapsed">{{ item.label }}</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="main-wrapper">
+    
+    <!-- Top Navbar -->
+    <header class="topbar glass-panel">
+      <div class="search-bar">
+        <!-- Search placeholder -->
+      </div>
+      
+      <div class="topbar-actions">
+        <div class="notif-wrapper">
+          <button class="icon-btn notification-btn" (click)="showNotifications=!showNotifications">
+            <span class="material-icons">notifications</span>
+            <span class="badge-count" *ngIf="(unreadCount$ | async) as count">
+              <span *ngIf="count > 0">{{count > 9 ? '9+' : count}}</span>
+            </span>
+          </button>
+          <div class="notif-dropdown glass-panel" *ngIf="showNotifications">
+            <div class="notif-header"><span>Notifications</span></div>
+            <div class="notif-list">
+              <div *ngFor="let n of (notificationService.notifications$ | async)" class="notif-item" [class.unread]="!n.is_read">
+                <span class="material-icons notif-icon"
+                  [style.color]="n.type==='unsubmitted' ? '#f59e0b' : n.type==='content_pending' ? '#3b82f6' : '#10b981'"
+                >{{n.type==='unsubmitted' ? 'warning' : n.type==='content_pending' ? 'folder' : 'notifications'}}</span>
+                <div class="notif-body">
+                  <p>{{n.message}}</p>
+                  <small *ngIf="n.subject">{{n.subject}}</small>
+                </div>
+              </div>
+              <div *ngIf="(notificationService.notifications$ | async)?.length === 0" class="notif-empty">All clear! 🎉</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="user-profile">
+          <div class="avatar">
+            {{ (authService.currentUser$ | async)?.name?.charAt(0) || 'U' }}
+          </div>
+          <div class="user-info">
+            <span class="user-name">{{ (authService.currentUser$ | async)?.name }}</span>
+            <button class="logout-link" (click)="logout()">Logout</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
